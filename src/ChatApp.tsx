@@ -9,7 +9,7 @@ const ChatApp = () => {
     useEffect(()=> {
      socketRef.current = new WebSocket('https://chatbotserver-production-ef2.up.railway.app/')
      socketRef.current.onmessage = (event: any)=> {
-        setMessage((prev:any) =>[...prev,{type: 'bot', text: event.data}])
+        setMessage((prev) =>[...prev,{type: 'bot', text: event.data}] as any)
      }
 
      return () => {
@@ -20,7 +20,7 @@ const ChatApp = () => {
     const sendMessage = () => {
         if(input.trim()){
             socketRef.current.send(input);
-            setMessage((prev: any) => [...prev,{type: 'user', text: input}])
+            setMessage((prev) => [...prev,{type: 'user', text: input}] as any)
             setinput("")
         }
     }
