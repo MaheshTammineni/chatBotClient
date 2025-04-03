@@ -119,12 +119,12 @@ const ChatApp = () => {
                 {msg.type !== "user" && (
                   <img
                     src={chatBotImage}
-                    alt="User Avatar"
+                    alt="chat Bot Avatar"
                     style={{
                       width: 40,
-                      height: 35,
+                      height: 40,
                       borderRadius: "50%",
-                      marginTop: 1,
+                      marginTop: 10,
                       marginLeft: -10,
                     }}
                   />
@@ -154,10 +154,11 @@ const ChatApp = () => {
                     alt="User Avatar"
                     style={{
                       width: 40,
-                      height: 35,
+                      height: 30,
                       marginTop: 10,
+                      marginLeft: 2,
                       borderRadius: "50%",
-                      marginRight: -10,
+                      marginRight: -18,
                     }}
                   />
                 )}
