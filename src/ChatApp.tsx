@@ -12,14 +12,19 @@ const ChatApp = () => {
   const socketRef: any = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext) as any;
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  // 👇 Scroll to bottom whenever chat changes
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chat, isTyping]);
 
   useEffect(() => {
     const savedChat =
-      JSON.parse(localStorage.getItem("chatHistory") as any) || [];
+    JSON.parse(localStorage.getItem("chatHistory") as any) || [];
     setChat(savedChat);
-  }, []);
-
-  useEffect(() => {
     socketRef.current = new WebSocket('https://chatbotserver-production-ef2.up.railway.app/')
     // When connection is open
     socketRef.current.onopen = () => {
@@ -29,23 +34,29 @@ const ChatApp = () => {
     socketRef.current.onclose = () => {
       setIsConnected(false);
     };
-    socketRef.current.onmessage = (event: any) => {
-      setChat((prev: any) => {
-        const now = new Date();
-        const time = now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        });
-        const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
-        const updatedChat: any = [
-          ...prev,
-          { type: "bot", text: event.data, timestamp: time, weekday: weekday },
-        ];
 
-        localStorage.setItem("chatHistory", JSON.stringify(updatedChat));
-        return updatedChat;
-      });
+    socketRef.current.onmessage = (event: any) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "typing") {
+        setIsTyping(data.status);
+      }
+      if (data.type === "message") {
+        setChat((prev: any) => {
+          const now = new Date();
+          const time = now.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
+          const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
+          const updatedChat: any = [
+            ...prev,
+            { from: "bot", text: data.text, timestamp: time, weekday: weekday },
+          ];
+          localStorage.setItem("chatHistory", JSON.stringify(updatedChat));
+          return updatedChat;
+        });
+      }
     };
 
     return () => {
@@ -68,7 +79,7 @@ const ChatApp = () => {
         const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
         const updatedChat: any = [
           ...prev,
-          { type: "user", text: input, timestamp: time, weekday: weekday },
+          { from: "user", text: input, timestamp: time, weekday: weekday },
         ];
 
         localStorage.setItem("chatHistory", JSON.stringify(updatedChat));
@@ -130,7 +141,7 @@ const ChatApp = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent:
-                    msg.type === "user" ? "flex-end" : "flex-start",
+                    msg.from === "user" ? "flex-end" : "flex-start",
                   marginTop: "10px",
                   marginBottom: "10px",
                   color: "white",
@@ -139,7 +150,7 @@ const ChatApp = () => {
                 }}
                 key={index}
               >
-                {msg.type !== "user" && (
+                {msg.from !== "user" && (
                   <img
                     src={chatBotImage}
                     alt="chat Bot Avatar"
@@ -154,14 +165,14 @@ const ChatApp = () => {
                 )}
                 <span
                   style={{
-                    backgroundColor: msg.type === "user" ? "#e57742" : "gray",
+                    backgroundColor: msg.from === "user" ? "#e57742" : "gray",
                     padding: "8px",
                     marginLeft: 2,
                     borderRadius: "10px",
                     borderBottomRightRadius:
-                      msg.type === "user" ? "0px" : "10px",
+                      msg.from === "user" ? "0px" : "10px",
                     borderBottomLeftRadius:
-                      msg.type !== "user" ? "0px" : "10px",
+                      msg.from !== "user" ? "0px" : "10px",
                   }}
                 >
                   {msg.text}
@@ -169,7 +180,7 @@ const ChatApp = () => {
                     {msg.timestamp}
                   </span>
                 </span>
-                {msg.type === "user" && (
+                {msg.from === "user" && (
                   <img
                     src={personImage}
                     alt="User Avatar"
@@ -187,8 +198,13 @@ const ChatApp = () => {
             </>
           );
         })}
+        {isTyping && (
+          <p>
+            <em>Bot is typing...</em>
+          </p>
+        )}
+        <div ref={chatEndRef} />
       </div>
-
       <div style={{ display: "flex", alignItems: "center" }}>
         <input
           type="text"
