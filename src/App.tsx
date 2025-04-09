@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import './App.css'
-import ChatApp from './ChatApp'
+import ChatApp from './ChatApp';
 import { ThemeProvider } from './ThemeContext';
 
 function App() {

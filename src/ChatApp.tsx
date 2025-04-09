@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState , useContext } from "react";
+import { useEffect, useRef, useState, useContext } from "react";
 import sendIconImg from "../src/assets/icon-send.png";
 import personImage from "../src/assets/personImage.jpeg";
-import chatBotImage from "../src/assets/chatBotImage.png"; 
+import chatBotImage from "../src/assets/chatBotImage.png";
 import { ThemeContext } from "./ThemeContext";
-import { FaToggleOn , FaToggleOff  } from "react-icons/fa";
+import { FaToggleOn, FaToggleOff } from "react-icons/fa";
 
 const ChatApp = () => {
   const [input, setinput] = useState("");
-  const [chat , setChat] = useState([]) as any;
+  const [chat, setChat] = useState([]) as any;
   const socketRef: any = useRef(null);
+  const [isConnected, setIsConnected] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext) as any;
 
   useEffect(() => {
@@ -20,6 +21,14 @@ const ChatApp = () => {
 
   useEffect(() => {
     socketRef.current = new WebSocket('https://chatbotserver-production-ef2.up.railway.app/')
+    // When connection is open
+    socketRef.current.onopen = () => {
+      setIsConnected(true);
+    };
+    // When connection is closed
+    socketRef.current.onclose = () => {
+      setIsConnected(false);
+    };
     socketRef.current.onmessage = (event: any) => {
       setChat((prev: any) => {
         const now = new Date();
@@ -40,7 +49,9 @@ const ChatApp = () => {
     };
 
     return () => {
-      socketRef.current.close();
+      if (socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.close();
+      }
     };
   }, []);
 
@@ -72,17 +83,30 @@ const ChatApp = () => {
       <h2>
         <span style={{ backgroundColor: "green" }}>💬</span> Real-time Chat Bot
         App
-        <span onClick={toggleTheme} style={{
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "2rem",
-        color: theme === "light" ? "dark" : "light",
-        display: "flex",
-        justifyContent: "end",
-      }}>
-        {theme === "light" ? <FaToggleOff /> : <FaToggleOn />}
-      </span>
+        <span
+          onClick={toggleTheme}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "2rem",
+            color: theme === "light" ? "dark" : "light",
+            display: "flex",
+            justifyContent: "end",
+          }}
+        >
+          <div
+            style={{
+              marginRight: "500px",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              color: isConnected ? "green" : "red",
+            }}
+          >
+            {isConnected ? "🟢 Online" : "🔴 Offline"}
+          </div>
+          {theme === "light" ? <FaToggleOff /> : <FaToggleOn />}
+        </span>
       </h2>
       <div
         style={{
@@ -95,7 +119,7 @@ const ChatApp = () => {
           color: theme === "light" ? "#000" : "#fff",
         }}
       >
-        {chat.map((msg: any, index:number) => {
+        {chat.map((msg: any, index: number) => {
           const showWeekday: any =
             index === 0 || msg.weekday !== chat[index - 1].weekday;
           return (
@@ -115,7 +139,6 @@ const ChatApp = () => {
                 }}
                 key={index}
               >
-
                 {msg.type !== "user" && (
                   <img
                     src={chatBotImage}
@@ -129,8 +152,6 @@ const ChatApp = () => {
                     }}
                   />
                 )}
-
-                {/* <span>{msg.type === "user" ? "YOU" : "BOT"}</span> */}
                 <span
                   style={{
                     backgroundColor: msg.type === "user" ? "#e57742" : "gray",
